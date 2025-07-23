@@ -1,103 +1,146 @@
-import Image from "next/image";
+"use client";
+
+import EmotionIconsOverlay from "@/components/EmotionsIconOverlay";
+import { emotionGradients } from "@/utils/gradientConfig";
+import { emotionImages } from "@/utils/imageConfig";
+import { Cinzel_Decorative, Playfair_Display } from "next/font/google";
+import Link from "next/link";
+import { useState } from "react";
+
+const playfair = Playfair_Display({ weight: "400", subsets: ["latin"] });
+const cinzel = Cinzel_Decorative({ weight: "700", subsets: ["latin-ext"] });
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [emotion, setEmotion] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [gradient, setGradient] = useState(emotionGradients.neutral);
+  const [image, setImage] = useState(emotionImages.neutral);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showIcons, setShowIcons] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const handleEmotionChange = async (newEmotion, newGradient, newImage) => {
+    setIsTransitioning(true);
+    setShowIcons(false);
+
+    setTimeout(() => {
+      setEmotion(newEmotion);
+      setGradient(newGradient);
+      setImage(newImage);
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setShowIcons(true);
+      }, 100);
+    }, 300);
+  };
+
+  const handleKeyDown = async (event) => {
+    if (event.key === "Enter") {
+      setEmotion(null);
+      const classifyTerm = event.target.value;
+      setLoading(true);
+
+      try {
+        const response = await fetch("/api/classify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: classifyTerm }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data) {
+          const newEmotion = data[0][0];
+          const newGradient =
+            emotionGradients[newEmotion.label] || emotionGradients.neutral;
+          const newImage =
+            emotionImages[newEmotion.label] || emotionImages.neutral;
+
+          await handleEmotionChange(newEmotion, newGradient, newImage);
+        }
+      } catch (error) {
+        console.error("Error during classification:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className="w-full h-[calc(100vh-7rem)]">
+      <div
+        style={gradient}
+        className="absolute -z-3 top-0 w-full min-h-screen transition-all duration-1000 ease-in-out"
+      />
+
+      <div
+        className={`transition-opacity duration-500 ${
+          showIcons ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <EmotionIconsOverlay currentEmotion={emotion?.label?.toLowerCase()} />
+      </div>
+
+      <div
+        className={`${playfair.className} flex flex-col gap-4 items-center justify-center h-full`}
+      >
+        <h1 className="text-[16px]">let's see how you are feeling today</h1>
+
+        <div className="relative">
+          <input
+            onKeyDown={handleKeyDown}
+            type="text"
+            placeholder="write your feelings..."
+            className="w-70 h-40 sm:w-155 sm:h-53 text-center border border-[1px] border-opacity-50 p-2 rounded-[20px] bg-[#EFDDD9] opacity-50 focus:outline-none focus:ring-none"
+          />
+
+          <div className="absolute -bottom-35 -right-10 pointer-events-none">
+            <img
+              src={image}
+              className={`transition-all duration-700 ease-in-out transform ${
+                isTransitioning
+                  ? "opacity-0 scale-75 -translate-y-4"
+                  : "opacity-100 scale-100 translate-y-0"
+              }`}
+              style={{
+                transitionTimingFunction: isTransitioning
+                  ? "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+                  : "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+              }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {loading && (
+          <div className="mt-4 text-lg flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+
+        {emotion && (
+          <div
+            className={`space-y-2 mt-25 transition-all text-center duration-600 ease-in-out transform ${
+              isTransitioning
+                ? "opacity-0 translate-y-4"
+                : "opacity-100 translate-y-0"
+            }`}
+          >
+            <h2 className="text-[14px]">Looks like you are feeling</h2>
+            <h2 className={`${cinzel.className} text-2xl uppercase`}>
+              {emotion.label}
+            </h2>
+
+            <p className="mt-10 sm:mt-20 text-[10px] sm:text-[14px]">
+              <Link href={"/themes"}>
+                click <span className="hover:underline">here</span> to know more
+                about this emotion and it's theme
+              </Link>
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
