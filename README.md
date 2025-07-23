@@ -2,8 +2,6 @@
 
 A beautiful, interactive web application that detects and visualizes human emotions through AI-powered analysis. Built with React and featuring stunning gradient animations, this app provides an immersive experience for understanding emotional states through color and design.
 
-![Emotion Detection Demo](https://deem-your-mood.vercel.app/)
-
 ## ✨ Features
 
 ### 🎨 Visual Experience
