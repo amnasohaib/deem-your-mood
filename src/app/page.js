@@ -50,6 +50,7 @@ export default function Home() {
         });
 
         const data = await response.json();
+        console.log("classify response:", response.status, data);
 
         if (response.ok && data) {
           const newEmotion = data[0][0];
